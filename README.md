@@ -25,4 +25,5 @@ Step 4: Compile the code and run it.
 
 **OUTPUT**
 
-![Screenshot from 2023-04-05 23-50-19.png](..%2F..%2F..%2F..%2F..%2F..%2FPictures%2FScreenshot%20from%202023-04-05%2023-50-19.png)
+
+![Screenshot from 2023-04-05 23-50-19](https://user-images.githubusercontent.com/124979629/230375374-e982c8a3-6908-438b-81ab-dba1a40aa44f.png)
