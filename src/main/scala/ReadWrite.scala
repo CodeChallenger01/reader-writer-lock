@@ -1,29 +1,66 @@
-import java.util.concurrent.locks.ReentrantReadWriteLock
+import java.util.concurrent.locks.ReentrantLock
 
 class ReadWriteLock {
-  private val reentrantReadWriteLock = new ReentrantReadWriteLock()
-  private var counter = 0
+  private val reentrantLock = new ReentrantLock()
+  private val readCond = reentrantLock.newCondition()
+  private val writeCond = reentrantLock.newCondition()
+  private var writerCount = 0
+  private var readerCount = 0
+  private var writerWaiting = false
 
-  /* A method to perform the writer part to increment the counter value */
-  def writeCount(): String = {
-    reentrantReadWriteLock.writeLock().lock()
+  /* To acquire the read lock */
+  def acquireReadLock(): Unit = {
+    reentrantLock.lock()
     try {
-      counter = counter + 1
-      s"Start Writing Count :$counter\nFinished Writing :$counter"
-    }
-    finally {
-      reentrantReadWriteLock.writeLock().unlock()
+      while (writerCount > 0 || writerWaiting) {
+        readCond.await()
+      }
+      readerCount += 1
+    } finally {
+      reentrantLock.unlock()
     }
   }
 
-  /* A method to perform the reader part to read the counter value */
-  def readCount(): String = {
-    reentrantReadWriteLock.readLock().lock()
+  /* To release the read lock */
+  def releaseReadLock(): Unit = {
+    reentrantLock.lock()
     try {
-      s"Start Read Count :$counter\nFinished Reading :$counter"
+      readerCount -= 1
+      if (readerCount == 0) {
+        writeCond.signalAll()
+      }
+    } finally {
+      reentrantLock.unlock()
     }
-    finally {
-      reentrantReadWriteLock.readLock().unlock()
+  }
+
+  /* To acquire the write lock */
+  def acquireWriteLock(): Unit = {
+    reentrantLock.lock()
+    try {
+      writerWaiting = true
+      while (writerCount > 0 || readerCount > 0) {
+        writeCond.await()
+      }
+      writerWaiting = false
+      writerCount += 1
+    } finally {
+      reentrantLock.unlock()
+    }
+  }
+
+  /* To release the write lock */
+  def releaseWriteLock(): Unit = {
+    reentrantLock.lock()
+    try {
+      writerCount -= 1
+      if (writerCount == 0) {
+        readCond.signalAll()
+      } else {
+        writeCond.signal()
+      }
+    } finally {
+      reentrantLock.unlock()
     }
   }
 }
@@ -34,28 +71,39 @@ class MultipleThreads {
 
   val threadReadOne = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.readCount())
+      readWriteLock.acquireReadLock()
+      println("Acquiring Read Lock 1")
       Thread.sleep(1000)
+      println("Releasing Read Lock 1")
+      readWriteLock.releaseReadLock()
     }
   }
+
   val threadReadTwo = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.readCount())
+      readWriteLock.acquireReadLock()
+      println("Acquiring Read Lock 2")
       Thread.sleep(1000)
+      println("Releasing Read Lock 2")
+      readWriteLock.releaseReadLock()
     }
   }
-
   val threadWriteOne = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.writeCount())
+      readWriteLock.acquireWriteLock()
+      println("Acquiring Write Lock 1")
       Thread.sleep(1000)
+      println("Releasing Write Lock 1")
+      readWriteLock.releaseWriteLock()
     }
   }
-
   val threadWriteTwo = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.writeCount())
+      readWriteLock.acquireWriteLock()
+      println("Acquiring Write Lock 2")
       Thread.sleep(1000)
+      println("Releasing Write Lock 2")
+      readWriteLock.releaseWriteLock()
     }
   }
 }
