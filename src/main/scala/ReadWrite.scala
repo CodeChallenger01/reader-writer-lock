@@ -8,8 +8,9 @@ class ReadWriteLock {
   def writeCount(): String = {
     reentrantReadWriteLock.writeLock().lock()
     try {
+      println("\nAcquiring Writing Lock on :" + Thread.currentThread().getName)
       counter = counter + 1
-      s"Start Writing Count :$counter\nFinished Writing :$counter"
+      s"Start Writing Count :$counter"
     }
     finally {
       reentrantReadWriteLock.writeLock().unlock()
@@ -20,7 +21,8 @@ class ReadWriteLock {
   def readCount(): String = {
     reentrantReadWriteLock.readLock().lock()
     try {
-      s"Start Read Count :$counter\nFinished Reading :$counter"
+      println("\nAcquiring Reading Lock on :" + Thread.currentThread().getName)
+      s"Start Read Count :$counter"
     }
     finally {
       reentrantReadWriteLock.readLock().unlock()
@@ -32,29 +34,34 @@ class ReadWriteLock {
 class MultipleThreads {
   private val readWriteLock = new ReadWriteLock
 
+  /* 1st Thread for reading counter value */
   val threadReadOne = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.readCount())
+      println(readWriteLock.readCount() + "\nReleasing Reading Lock :" + Thread.currentThread().getName)
       Thread.sleep(1000)
     }
   }
+
+  /* 2nd Thread for reading counter value */
   val threadReadTwo = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.readCount())
+      println(readWriteLock.readCount() + "\nReleasing Reading Lock :" + Thread.currentThread().getName)
       Thread.sleep(1000)
     }
   }
 
+  /* 3rd Thread for writing(increment) counter value */
   val threadWriteOne = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.writeCount())
+      println(readWriteLock.writeCount() + "\nReleasing Writing Lock :" + Thread.currentThread().getName)
       Thread.sleep(1000)
     }
   }
 
+  /* 4th Thread for writing(increment) counter value */
   val threadWriteTwo = new Runnable {
     override def run(): Unit = {
-      println(readWriteLock.writeCount())
+      println(readWriteLock.writeCount() + "\nReleasing Writing Lock :" + Thread.currentThread().getName)
       Thread.sleep(1000)
     }
   }
